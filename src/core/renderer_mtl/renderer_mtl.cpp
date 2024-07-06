@@ -73,6 +73,7 @@ void RendererMTL::display() {
 		auto topScreen = colorRenderTargetCache.findFromAddress(topScreenAddr);
 
 		if (topScreen) {
+		    // TODO: the clear is unnecessary
 		    clearColor(nullptr, topScreen->get().texture);
 			renderCommandEncoder->setViewport(MTL::Viewport{0, 0, 400, 240, 0.0f, 1.0f});
 			renderCommandEncoder->setFragmentTexture(topScreen->get().texture, 0);
@@ -102,6 +103,7 @@ void RendererMTL::display() {
     	    commandBuffers[i]->commandBuffer->presentDrawable(drawable);
     	}
 		commandBuffers[i]->commandBuffer->commit();
+		commandBuffers[i]->commandBuffer->release();
 	}
 	commandBuffers.clear();
 
@@ -312,7 +314,7 @@ void RendererMTL::displayTransfer(u32 inputAddr, u32 outputAddr, u32 inputSize, 
 	u32 outputHeight = outputSize >> 16;
 
 	auto srcFramebuffer = getColorRenderTarget(inputAddr, inputFormat, inputWidth, outputHeight);
-	clearColor(nullptr, srcFramebuffer->texture);
+	bool clearsColor = clearColor(nullptr, srcFramebuffer->texture);
 	Math::Rect<u32> srcRect = srcFramebuffer->getSubRect(inputAddr, outputWidth, outputHeight);
 
 	if (verticalFlip) {
@@ -353,6 +355,13 @@ void RendererMTL::displayTransfer(u32 inputAddr, u32 outputAddr, u32 inputSize, 
 	renderCommandEncoder->setFragmentSamplerState(nearestSampler, 0);
 
 	renderCommandEncoder->drawPrimitives(MTL::PrimitiveTypeTriangleStrip, NS::UInteger(0), NS::UInteger(4));
+
+	// Dependencies and outputs
+	if (clearsColor) {
+	   commandBuffer->overrides.push_back(srcFramebuffer->texture);
+	}
+	// TODO: if destRect equals destFramebuffer's size, it counts as override as well
+	commandBuffer->outputs.push_back(destFramebuffer->texture);
 }
 
 void RendererMTL::textureCopy(u32 inputAddr, u32 outputAddr, u32 totalBytes, u32 inputSize, u32 outputSize, u32 flags) {
@@ -436,17 +445,17 @@ void RendererMTL::drawVertices(PICA::PrimType primType, std::span<const PICA::Ve
 
 	// -------- Render --------
 	MTL::RenderPassDescriptor* renderPassDescriptor = MTL::RenderPassDescriptor::alloc()->init();
-	bool doesClear = clearColor(renderPassDescriptor, colorRenderTarget->texture);
+	bool clearsColor = clearColor(renderPassDescriptor, colorRenderTarget->texture);
+	bool clearsDepth = false;
+	bool clearsStencil = false;
     if (depthStencilRenderTarget) {
-        if (clearDepth(renderPassDescriptor, depthStencilRenderTarget->texture))
-            doesClear = true;
+        clearsDepth = clearDepth(renderPassDescriptor, depthStencilRenderTarget->texture);
         if (depthStencilRenderTarget->format == DepthFmt::Depth24Stencil8) {
-            if (clearStencil(renderPassDescriptor, depthStencilRenderTarget->texture))
-                doesClear = true;
+            clearsStencil = clearStencil(renderPassDescriptor, depthStencilRenderTarget->texture);
         }
     }
 
-	beginRenderPassIfNeeded(renderPassDescriptor, doesClear, colorRenderTarget->texture, (depthStencilRenderTarget ? depthStencilRenderTarget->texture : nullptr));
+	beginRenderPassIfNeeded(renderPassDescriptor, clearsColor || clearsDepth || clearsStencil, colorRenderTarget->texture, (depthStencilRenderTarget ? depthStencilRenderTarget->texture : nullptr));
 
 	// Update the LUT texture if necessary
 	if (gpu.lightingLUTDirty) {
@@ -472,6 +481,20 @@ void RendererMTL::drawVertices(PICA::PrimType primType, std::span<const PICA::Ve
 	renderCommandEncoder->setFragmentBytes(&logicOp, sizeof(logicOp), 2);
 
 	renderCommandEncoder->drawPrimitives(toMTLPrimitiveType(primType), NS::UInteger(0), NS::UInteger(vertices.size()));
+
+	// Dependencies and outputs
+	if (clearsColor) {
+	    commandBuffer->overrides.push_back(colorRenderTarget->texture);
+	}
+	// TODO: track depth and stencil separately?
+	if (clearsDepth || clearsStencil) {
+	    commandBuffer->overrides.push_back(depthStencilRenderTarget->texture);
+	}
+	commandBuffer->outputs.push_back(colorRenderTarget->texture);
+	// TODO: track depth and stencil separately?
+	if (depthStencilRenderTarget) {
+	    commandBuffer->outputs.push_back(depthStencilRenderTarget->texture);
+	}
 }
 
 void RendererMTL::screenshot(const std::string& name) {

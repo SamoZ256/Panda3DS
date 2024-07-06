@@ -32,7 +32,7 @@ struct StencilClearOp {
 
 struct CommandBuffer {
     MTL::CommandBuffer* commandBuffer;
-    std::vector<MTL::Texture*> dependencies;
+    std::vector<MTL::Texture*> overrides;
     std::vector<MTL::Texture*> outputs;
 };
 
