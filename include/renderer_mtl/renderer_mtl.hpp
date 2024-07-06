@@ -41,16 +41,22 @@ struct CommandBuffer {
     }
 
     void addOutput(MTL::Texture* texture) {
-        outputs.push_back(texture);
+        if (std::find(outputs.begin(), outputs.end(), texture) == outputs.end()) {
+            outputs.push_back(texture);
+        }
     }
 
     void addOverride(MTL::Texture* texture) {
-        overrides.push_back(texture);
+        if (std::find(overrides.begin(), overrides.end(), texture) == overrides.end()) {
+            overrides.push_back(texture);
+        }
         addOutput(texture);
     }
 
     void addDependency(MTL::Texture* texture) {
-        dependencies.push_back(texture);
+        if (std::find(dependencies.begin(), dependencies.end(), texture) == dependencies.end()) {
+            dependencies.push_back(texture);
+        }
     }
 
     void addDependencyOrOverride(MTL::Texture* texture, bool override) {

@@ -78,6 +78,9 @@ void RendererMTL::display() {
 			renderCommandEncoder->setViewport(MTL::Viewport{0, 0, 400, 240, 0.0f, 1.0f});
 			renderCommandEncoder->setFragmentTexture(topScreen->get().texture, 0);
 			renderCommandEncoder->drawPrimitives(MTL::PrimitiveTypeTriangleStrip, NS::UInteger(0), NS::UInteger(4));
+
+			// Dependencies and outputs
+			commandBuffer->addDependency(topScreen->get().texture);
 		}
 	}
 
@@ -92,18 +95,66 @@ void RendererMTL::display() {
 			renderCommandEncoder->setViewport(MTL::Viewport{40, 240, 320, 240, 0.0f, 1.0f});
 			renderCommandEncoder->setFragmentTexture(bottomScreen->get().texture, 0);
 			renderCommandEncoder->drawPrimitives(MTL::PrimitiveTypeTriangleStrip, NS::UInteger(0), NS::UInteger(4));
+
+			// Dependencies and outputs
+			commandBuffer->addDependency(bottomScreen->get().texture);
 		}
 	}
+
+	// Dependencies and outputs
+	commandBuffer->addOutput(drawable->texture());
 
 	endRenderPass();
 
 	// Find command buffers that can be omitted
+	std::map<MTL::Texture*, bool> overrides;
+	for (int32_t i = commandBuffers.size() - 1; i >= 0; i--) {
+	    auto& commandBuffer = commandBuffers[i];
+	    bool hasUnoverridenOutput = false;
+		for (auto output : commandBuffer->outputs) {
+			if (!overrides[output]) {
+			    hasUnoverridenOutput = true;
+				break;
+			}
+		}
 
+		// If all of the command buffer's outputs are overriden before being read, we can skip it safely
+		if (hasUnoverridenOutput) {
+		    for (auto dependency : commandBuffer->dependencies) {
+		        // If this command buffer depends on a texture, remove the texture from overrides
+				overrides[dependency] = false;
+			}
+
+			// Add overrides
+			for (auto override : commandBuffer->overrides) {
+			    overrides[override] = true;
+			}
+		} else {
+		    //delete commandBuffer;
+			//commandBuffer = nullptr;
+		}
+	}
 
 	// Commit the command buffers
 	for (u32 i = 0; i < commandBuffers.size(); i++) {
 	    auto commandBuffer = commandBuffers[i];
 	    if (commandBuffer) {
+			std::cout << "COMMAND BUFFER " << i << std::endl;
+			std::cout << "DEPENDENCIES: ";
+			for (auto a : commandBuffer->dependencies) {
+			    std::cout << a << ", ";
+			}
+			std::cout << std::endl;
+			std::cout << "OVERRIDES: ";
+			for (auto a : commandBuffer->overrides) {
+			    std::cout << a << ", ";
+			}
+			std::cout << std::endl;
+			std::cout << "OUTPUTS: ";
+			for (auto a : commandBuffer->outputs) {
+			    std::cout << a << ", ";
+			}
+			std::cout << std::endl;
     	    // Present the drawable on the last command buffer
            	if (i == commandBuffers.size() - 1) {
            	    commandBuffer->commandBuffer->presentDrawable(drawable);
@@ -112,6 +163,7 @@ void RendererMTL::display() {
     		delete commandBuffer;
 		}
 	}
+	std::cout << std::endl;
 	commandBuffers.clear();
 
 	// Inform the vertex buffer cache that the frame ended
