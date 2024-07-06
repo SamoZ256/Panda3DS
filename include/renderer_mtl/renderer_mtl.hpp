@@ -32,8 +32,34 @@ struct StencilClearOp {
 
 struct CommandBuffer {
     MTL::CommandBuffer* commandBuffer;
+    std::vector<MTL::Texture*> dependencies;
     std::vector<MTL::Texture*> overrides;
     std::vector<MTL::Texture*> outputs;
+
+    ~CommandBuffer() {
+        commandBuffer->release();
+    }
+
+    void addOutput(MTL::Texture* texture) {
+        outputs.push_back(texture);
+    }
+
+    void addOverride(MTL::Texture* texture) {
+        overrides.push_back(texture);
+        addOutput(texture);
+    }
+
+    void addDependency(MTL::Texture* texture) {
+        dependencies.push_back(texture);
+    }
+
+    void addDependencyOrOverride(MTL::Texture* texture, bool override) {
+        if (override) {
+            addOverride(texture);
+        } else {
+            addDependency(texture);
+        }
+    }
 };
 
 } // namespace Metal

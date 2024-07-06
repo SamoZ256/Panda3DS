@@ -97,13 +97,20 @@ void RendererMTL::display() {
 
 	endRenderPass();
 
+	// Find command buffers that can be omitted
+
+
+	// Commit the command buffers
 	for (u32 i = 0; i < commandBuffers.size(); i++) {
-	    // Present the drawable on the last command buffer
-    	if (i == commandBuffers.size() - 1) {
-    	    commandBuffers[i]->commandBuffer->presentDrawable(drawable);
-    	}
-		commandBuffers[i]->commandBuffer->commit();
-		commandBuffers[i]->commandBuffer->release();
+	    auto commandBuffer = commandBuffers[i];
+	    if (commandBuffer) {
+    	    // Present the drawable on the last command buffer
+           	if (i == commandBuffers.size() - 1) {
+           	    commandBuffer->commandBuffer->presentDrawable(drawable);
+           	}
+    		commandBuffer->commandBuffer->commit();
+    		delete commandBuffer;
+		}
 	}
 	commandBuffers.clear();
 
@@ -357,11 +364,9 @@ void RendererMTL::displayTransfer(u32 inputAddr, u32 outputAddr, u32 inputSize, 
 	renderCommandEncoder->drawPrimitives(MTL::PrimitiveTypeTriangleStrip, NS::UInteger(0), NS::UInteger(4));
 
 	// Dependencies and outputs
-	if (clearsColor) {
-	   commandBuffer->overrides.push_back(srcFramebuffer->texture);
-	}
+	commandBuffer->addDependencyOrOverride(srcFramebuffer->texture, clearsColor);
 	// TODO: if destRect equals destFramebuffer's size, it counts as override as well
-	commandBuffer->outputs.push_back(destFramebuffer->texture);
+	commandBuffer->addOutput(destFramebuffer->texture);
 }
 
 void RendererMTL::textureCopy(u32 inputAddr, u32 outputAddr, u32 totalBytes, u32 inputSize, u32 outputSize, u32 flags) {
@@ -483,17 +488,13 @@ void RendererMTL::drawVertices(PICA::PrimType primType, std::span<const PICA::Ve
 	renderCommandEncoder->drawPrimitives(toMTLPrimitiveType(primType), NS::UInteger(0), NS::UInteger(vertices.size()));
 
 	// Dependencies and outputs
-	if (clearsColor) {
-	    commandBuffer->overrides.push_back(colorRenderTarget->texture);
-	}
+	commandBuffer->addDependencyOrOverride(colorRenderTarget->texture, clearsColor);
 	// TODO: track depth and stencil separately?
-	if (clearsDepth || clearsStencil) {
-	    commandBuffer->overrides.push_back(depthStencilRenderTarget->texture);
-	}
-	commandBuffer->outputs.push_back(colorRenderTarget->texture);
+	commandBuffer->addDependencyOrOverride(depthStencilRenderTarget->texture, clearsDepth || clearsStencil);
+	commandBuffer->addOutput(colorRenderTarget->texture);
 	// TODO: track depth and stencil separately?
 	if (depthStencilRenderTarget) {
-	    commandBuffer->outputs.push_back(depthStencilRenderTarget->texture);
+	    commandBuffer->addOutput(depthStencilRenderTarget->texture);
 	}
 }
 
