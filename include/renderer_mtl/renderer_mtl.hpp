@@ -30,6 +30,12 @@ struct StencilClearOp {
     u8 stencil;
 };
 
+struct CommandBuffer {
+    MTL::CommandBuffer* commandBuffer;
+    std::vector<MTL::Texture*> dependencies;
+    std::vector<MTL::Texture*> outputs;
+};
+
 } // namespace Metal
 
 class RendererMTL final : public Renderer {
@@ -80,18 +86,13 @@ class RendererMTL final : public Renderer {
 	std::vector<Metal::ColorClearOp> colorClearOps;
 	std::vector<Metal::DepthClearOp> depthClearOps;
 	std::vector<Metal::StencilClearOp> stencilClearOps;
+	std::vector<Metal::CommandBuffer*> commandBuffers;
 
 	// Active state
-	MTL::CommandBuffer* commandBuffer = nullptr;
+	Metal::CommandBuffer* commandBuffer = nullptr;
 	MTL::RenderCommandEncoder* renderCommandEncoder = nullptr;
 	MTL::Texture* lastColorTexture = nullptr;
 	MTL::Texture* lastDepthTexture = nullptr;
-
-	void createCommandBufferIfNeeded() {
-		if (!commandBuffer) {
-			commandBuffer = commandQueue->commandBuffer();
-		}
-	}
 
 	void endRenderPass() {
         if (renderCommandEncoder) {
@@ -100,29 +101,29 @@ class RendererMTL final : public Renderer {
         }
 	}
 
+	void createCommandBuffer() {
+	    endRenderPass();
+		// If there are too many command buffers, commit the first one
+		// TODO: check if it's always 64
+		if (commandBuffers.size() >= 64) {
+		    commandBuffers[0]->commandBuffer->commit();
+			commandBuffers.erase(commandBuffers.begin());
+		}
+		// TODO: only create a new command buffer after a certain number of draw calls
+		commandBuffer = new Metal::CommandBuffer{commandQueue->commandBuffer()};
+		commandBuffers.push_back(commandBuffer);
+	}
+
 	void beginRenderPassIfNeeded(MTL::RenderPassDescriptor* renderPassDescriptor, bool doesClears, MTL::Texture* colorTexture, MTL::Texture* depthTexture = nullptr) {
-		createCommandBufferIfNeeded();
-
 		if (doesClears || !renderCommandEncoder || colorTexture != lastColorTexture || (depthTexture != lastDepthTexture || depthTexture == nullptr)) {
-		    endRenderPass();
+		    createCommandBuffer();
 
-            renderCommandEncoder = commandBuffer->renderCommandEncoder(renderPassDescriptor);
+            renderCommandEncoder = commandBuffer->commandBuffer->renderCommandEncoder(renderPassDescriptor);
 
 		    lastColorTexture = colorTexture;
             lastDepthTexture = depthTexture;
 		}
 	}
-
-	void commitCommandBuffer() {
-	   if (renderCommandEncoder) {
-            renderCommandEncoder->endEncoding();
-            renderCommandEncoder = nullptr;
-        }
-        if (commandBuffer) {
-            commandBuffer->commit();
-            commandBuffer = nullptr;
-        }
-    }
 
     void clearColor(MTL::RenderPassDescriptor* renderPassDescriptor, Metal::ColorClearOp clearOp) {
         bool beginRenderPass = (renderPassDescriptor == nullptr);

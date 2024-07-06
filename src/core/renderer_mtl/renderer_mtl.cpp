@@ -96,8 +96,14 @@ void RendererMTL::display() {
 
 	endRenderPass();
 
-	commandBuffer->presentDrawable(drawable);
-	commitCommandBuffer();
+	for (u32 i = 0; i < commandBuffers.size(); i++) {
+	    // Present the drawable on the last command buffer
+    	if (i == commandBuffers.size() - 1) {
+    	    commandBuffers[i]->commandBuffer->presentDrawable(drawable);
+    	}
+		commandBuffers[i]->commandBuffer->commit();
+	}
+	commandBuffers.clear();
 
 	// Inform the vertex buffer cache that the frame ended
 	vertexBufferCache.endFrame();
