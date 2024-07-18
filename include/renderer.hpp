@@ -1,7 +1,7 @@
 #pragma once
 #include <array>
-#include <optional>
 #include <span>
+#include <optional>
 
 #include "PICA/pica_vertex.hpp"
 #include "PICA/regs.hpp"

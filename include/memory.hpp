@@ -198,12 +198,12 @@ private:
 
 	// Total amount of OS-only FCRAM available (Can vary depending on how much FCRAM the app requests via the cart exheader)
 	u32 totalSysFCRAM() {
-	    return FCRAM_SIZE - FCRAM_APPLICATION_SIZE;
+		return FCRAM_SIZE - FCRAM_APPLICATION_SIZE;
 	}
 
 	// Amount of OS-only FCRAM currently available
 	u32 remainingSysFCRAM() {
-	    return totalSysFCRAM() - usedSystemMemory;
+		return totalSysFCRAM() - usedSystemMemory;
 	}
 
 	// Physical FCRAM index to the start of OS FCRAM
@@ -213,7 +213,7 @@ private:
 	}
 
 	enum class BatteryLevel {
-	    Empty = 0, AlmostEmpty, OneBar, TwoBars, ThreeBars, FourBars
+		Empty = 0, AlmostEmpty, OneBar, TwoBars, ThreeBars, FourBars
 	};
 	u8 getBatteryState(bool adapterConnected, bool charging, BatteryLevel batteryLevel) {
 		u8 value = static_cast<u8>(batteryLevel) << 2; // Bits 2:4 are the battery level from 0 to 5
@@ -241,7 +241,7 @@ private:
 
 	// Returns whether "addr" is aligned to a page (4096 byte) boundary
 	static constexpr bool isAligned(u32 addr) {
-	    return (addr & pageMask) == 0;
+		return (addr & pageMask) == 0;
 	}
 
 	// Allocate "size" bytes of RAM starting from FCRAM index "paddr" (We pick it ourself if paddr == 0)
