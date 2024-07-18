@@ -10,13 +10,13 @@
 class Kernel;
 
 class CSNDService {
-	HandleType handle = KernelHandles::CSND;
+	Handle handle = KernelHandles::CSND;
 	Memory& mem;
 	Kernel& kernel;
 	MAKE_LOG_FUNCTION(log, csndLogger)
 
 	u8* sharedMemory = nullptr;
-	std::optional<HandleType> csndMutex = std::nullopt;
+	std::optional<Handle> csndMutex = std::nullopt;
 	size_t sharedMemSize = 0;
 	bool initialized = false;
 
@@ -30,5 +30,7 @@ class CSNDService {
 	void reset();
 	void handleSyncRequest(u32 messagePointer);
 
-	void setSharedMemory(u8* ptr) { sharedMemory = ptr; }
+	void setSharedMemory(u8* ptr) {
+		sharedMemory = ptr;
+	}
 };

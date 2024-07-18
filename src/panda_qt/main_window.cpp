@@ -268,7 +268,8 @@ void MainWindow::dumpDspFirmware() {
 		case DSPService::ComponentDumpResult::Success: break;
 		case DSPService::ComponentDumpResult::NotLoaded: {
 			QMessageBox messageBox(
-				QMessageBox::Icon::Warning, tr("No DSP firmware loaded"), tr("The currently loaded app has not uploaded a firmware to the DSP")
+				QMessageBox::Icon::Warning, tr("No DSP firmware loaded"),
+				tr("The currently loaded app has not uploaded a firmware to the DSP")
 			);
 
 			QAbstractButton* button = messageBox.addButton(tr("OK"), QMessageBox::ButtonRole::YesRole);

@@ -5,7 +5,7 @@
 #include "memory.hpp"
 
 class HTTPService {
-	HandleType handle = KernelHandles::HTTP;
+	Handle handle = KernelHandles::HTTP;
 	Memory& mem;
 	MAKE_LOG_FUNCTION(log, httpLogger)
 

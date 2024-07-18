@@ -1,6 +1,5 @@
 #pragma once
 #include <optional>
-
 #include "helpers.hpp"
 #include "kernel_types.hpp"
 #include "logger.hpp"
@@ -10,18 +9,18 @@
 class Kernel;
 
 class CECDService {
-	HandleType handle = KernelHandles::CECD;
+	Handle handle = KernelHandles::CECD;
 	Memory& mem;
 	Kernel& kernel;
 	MAKE_LOG_FUNCTION(log, cecdLogger)
 
-	std::optional<HandleType> infoEvent;
+	std::optional<Handle> infoEvent;
 
 	// Service commands
 	void getInfoEventHandle(u32 messagePointer);
 	void openAndRead(u32 messagePointer);
 
-  public:
+public:
 	CECDService(Memory& mem, Kernel& kernel) : mem(mem), kernel(kernel) {}
 	void reset();
 	void handleSyncRequest(u32 messagePointer);

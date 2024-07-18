@@ -14,7 +14,8 @@ namespace FileOps {
 	};
 }
 
-void Kernel::handleFileOperation(u32 messagePointer, HandleType file) {
+
+void Kernel::handleFileOperation(u32 messagePointer, Handle file) {
 	const u32 cmd = mem.read32(messagePointer);
 	switch (cmd) {
 		case FileOps::Close: closeFile(messagePointer, file); break;
@@ -29,7 +30,7 @@ void Kernel::handleFileOperation(u32 messagePointer, HandleType file) {
 	}
 }
 
-void Kernel::closeFile(u32 messagePointer, HandleType fileHandle) {
+void Kernel::closeFile(u32 messagePointer, Handle fileHandle) {
 	logFileIO("Closed file %X\n", fileHandle);
 
 	const auto p = getObject(fileHandle, KernelObjectType::File);
@@ -47,7 +48,7 @@ void Kernel::closeFile(u32 messagePointer, HandleType fileHandle) {
 	mem.write32(messagePointer + 4, Result::Success);
 }
 
-void Kernel::flushFile(u32 messagePointer, HandleType fileHandle) {
+void Kernel::flushFile(u32 messagePointer, Handle fileHandle) {
 	logFileIO("Flushed file %X\n", fileHandle);
 
 	const auto p = getObject(fileHandle, KernelObjectType::File);
@@ -64,12 +65,13 @@ void Kernel::flushFile(u32 messagePointer, HandleType fileHandle) {
 	mem.write32(messagePointer + 4, Result::Success);
 }
 
-void Kernel::readFile(u32 messagePointer, HandleType fileHandle) {
+void Kernel::readFile(u32 messagePointer, Handle fileHandle) {
 	u64 offset = mem.read64(messagePointer + 4);
 	u32 size = mem.read32(messagePointer + 12);
 	u32 dataPointer = mem.read32(messagePointer + 20);
 
-	logFileIO("Trying to read %X bytes from file %X, starting from offset %llX into memory address %08X\n", size, fileHandle, offset, dataPointer);
+	logFileIO("Trying to read %X bytes from file %X, starting from offset %llX into memory address %08X\n",
+		size, fileHandle, offset, dataPointer);
 
 	const auto p = getObject(fileHandle, KernelObjectType::File);
 	if (p == nullptr) [[unlikely]] {
@@ -83,7 +85,7 @@ void Kernel::readFile(u32 messagePointer, HandleType fileHandle) {
 		Helpers::panic("Tried to read closed file");
 	}
 
-	// HandleType files with their own file descriptors by just fread'ing the data
+	// Handle files with their own file descriptors by just fread'ing the data
 	if (file->fd) {
 		std::unique_ptr<u8[]> data(new u8[size]);
 		IOFile f(file->fd);
@@ -92,7 +94,8 @@ void Kernel::readFile(u32 messagePointer, HandleType fileHandle) {
 
 		if (!success) {
 			Helpers::panic("Kernel::ReadFile with file descriptor failed");
-		} else {
+		}
+		else {
 			for (size_t i = 0; i < bytesRead; i++) {
 				mem.write8(u32(dataPointer + i), data[i]);
 			}
@@ -104,7 +107,7 @@ void Kernel::readFile(u32 messagePointer, HandleType fileHandle) {
 		return;
 	}
 
-	// HandleType files without their own FD, such as SelfNCCH files
+	// Handle files without their own FD, such as SelfNCCH files
 	auto archive = file->archive;
 	std::optional<u32> bytesRead = archive->readFile(file, offset, size, dataPointer);
 	if (!bytesRead.has_value()) {
@@ -115,13 +118,14 @@ void Kernel::readFile(u32 messagePointer, HandleType fileHandle) {
 	}
 }
 
-void Kernel::writeFile(u32 messagePointer, HandleType fileHandle) {
+void Kernel::writeFile(u32 messagePointer, Handle fileHandle) {
 	u64 offset = mem.read64(messagePointer + 4);
 	u32 size = mem.read32(messagePointer + 12);
 	u32 writeOption = mem.read32(messagePointer + 16);
 	u32 dataPointer = mem.read32(messagePointer + 24);
 
-	logFileIO("Trying to write %X bytes to file %X, starting from file offset %llX and memory address %08X\n", size, fileHandle, offset, dataPointer);
+	logFileIO("Trying to write %X bytes to file %X, starting from file offset %llX and memory address %08X\n",
+		size, fileHandle, offset, dataPointer);
 
 	const auto p = getObject(fileHandle, KernelObjectType::File);
 	if (p == nullptr) [[unlikely]] {
@@ -133,7 +137,8 @@ void Kernel::writeFile(u32 messagePointer, HandleType fileHandle) {
 		Helpers::panic("Tried to write closed file");
 	}
 
-	if (!file->fd) Helpers::panic("[Kernel::File::WriteFile] Tried to write to file without a valid file descriptor");
+	if (!file->fd)
+		Helpers::panic("[Kernel::File::WriteFile] Tried to write to file without a valid file descriptor");
 
 	std::unique_ptr<u8[]> data(new u8[size]);
 	for (size_t i = 0; i < size; i++) {
@@ -157,7 +162,7 @@ void Kernel::writeFile(u32 messagePointer, HandleType fileHandle) {
 	}
 }
 
-void Kernel::setFileSize(u32 messagePointer, HandleType fileHandle) {
+void Kernel::setFileSize(u32 messagePointer, Handle fileHandle) {
 	logFileIO("Setting size of file %X\n", fileHandle);
 
 	const auto p = getObject(fileHandle, KernelObjectType::File);
@@ -186,7 +191,7 @@ void Kernel::setFileSize(u32 messagePointer, HandleType fileHandle) {
 	}
 }
 
-void Kernel::getFileSize(u32 messagePointer, HandleType fileHandle) {
+void Kernel::getFileSize(u32 messagePointer, Handle fileHandle) {
 	logFileIO("Getting size of file %X\n", fileHandle);
 
 	const auto p = getObject(fileHandle, KernelObjectType::File);
@@ -215,7 +220,7 @@ void Kernel::getFileSize(u32 messagePointer, HandleType fileHandle) {
 	}
 }
 
-void Kernel::openLinkFile(u32 messagePointer, HandleType fileHandle) {
+void Kernel::openLinkFile(u32 messagePointer, Handle fileHandle) {
 	logFileIO("Open link file (clone) of file %X\n", fileHandle);
 
 	const auto p = getObject(fileHandle, KernelObjectType::File);
@@ -242,7 +247,7 @@ void Kernel::openLinkFile(u32 messagePointer, HandleType fileHandle) {
 	mem.write32(messagePointer + 12, handle);
 }
 
-void Kernel::setFilePriority(u32 messagePointer, HandleType fileHandle) {
+void Kernel::setFilePriority(u32 messagePointer, Handle fileHandle) {
 	const u32 priority = mem.read32(messagePointer + 4);
 	logFileIO("Setting priority of file %X to %d\n", fileHandle, priority);
 

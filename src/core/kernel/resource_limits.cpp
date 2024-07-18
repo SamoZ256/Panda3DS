@@ -1,8 +1,7 @@
 #include "resource_limits.hpp"
-
 #include "kernel.hpp"
 
-// Result GetResourceLimit(HandleType* resourceLimit, HandleType process)
+// Result GetResourceLimit(Handle* resourceLimit, Handle process)
 // out: r0 -> result, r1 -> handle
 void Kernel::getResourceLimit() {
 	const auto handlePointer = regs[0];
@@ -21,10 +20,10 @@ void Kernel::getResourceLimit() {
 	regs[1] = processData->limits.handle;
 }
 
-// Result GetResourceLimitLimitValues(s64* values, HandleType resourceLimit, LimitableResource* names, s32 nameCount)
+// Result GetResourceLimitLimitValues(s64* values, Handle resourceLimit, LimitableResource* names, s32 nameCount)
 void Kernel::getResourceLimitLimitValues() {
-	u32 values = regs[0];  // Pointer to values (The resource limits get output here)
-	const HandleType resourceLimit = regs[1];
+	u32 values = regs[0]; // Pointer to values (The resource limits get output here)
+	const Handle resourceLimit = regs[1];
 	u32 names = regs[2];  // Pointer to resources that we should return
 	u32 count = regs[3];  // Number of resources
 
@@ -50,10 +49,10 @@ void Kernel::getResourceLimitLimitValues() {
 	regs[0] = Result::Success;
 }
 
-// Result GetResourceLimitCurrentValues(s64* values, HandleType resourceLimit, LimitableResource* names, s32 nameCount)
+// Result GetResourceLimitCurrentValues(s64* values, Handle resourceLimit, LimitableResource* names, s32 nameCount)
 void Kernel::getResourceLimitCurrentValues() {
-	u32 values = regs[0];  // Pointer to values (The resource limits get output here)
-	const HandleType resourceLimit = regs[1];
+	u32 values = regs[0]; // Pointer to values (The resource limits get output here)
+	const Handle resourceLimit = regs[1];
 	u32 names = regs[2];  // Pointer to resources that we should return
 	u32 count = regs[3];  // Number of resources
 	logSVC("GetResourceLimitCurrentValues(values = %08X, handle = %X, names = %08X, count = %d)\n", values, resourceLimit, names, count);

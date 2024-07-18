@@ -5,7 +5,7 @@
 #include "memory.hpp"
 
 class NewsUService {
-	HandleType handle = KernelHandles::NEWS_U;
+	Handle handle = KernelHandles::NEWS_U;
 	Memory& mem;
 	MAKE_LOG_FUNCTION(log, newsLogger)
 

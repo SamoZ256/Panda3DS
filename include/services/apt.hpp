@@ -1,17 +1,19 @@
 #pragma once
 #include <optional>
-
-#include "applets/applet_manager.hpp"
 #include "helpers.hpp"
 #include "kernel_types.hpp"
 #include "logger.hpp"
 #include "memory.hpp"
 #include "result/result.hpp"
 
+#include "applets/applet_manager.hpp"
+
 // Yay, more circular dependencies
 class Kernel;
 
-enum class ConsoleModel : u32 { Old3DS, New3DS };
+enum class ConsoleModel : u32 {
+	Old3DS, New3DS
+};
 
 // https://www.3dbrew.org/wiki/NS_and_APT_Services#Command
 namespace APT::Transitions {
@@ -39,13 +41,13 @@ namespace APT::Transitions {
 }
 
 class APTService {
-	HandleType handle = KernelHandles::APT;
+	Handle handle = KernelHandles::APT;
 	Memory& mem;
 	Kernel& kernel;
 
-	std::optional<HandleType> lockHandle = std::nullopt;
-	std::optional<HandleType> notificationEvent = std::nullopt;
-	std::optional<HandleType> resumeEvent = std::nullopt;
+	std::optional<Handle> lockHandle = std::nullopt;
+	std::optional<Handle> notificationEvent = std::nullopt;
+	std::optional<Handle> resumeEvent = std::nullopt;
 
 	ConsoleModel model = ConsoleModel::Old3DS;
 	Applets::AppletManager appletManager;
@@ -97,7 +99,7 @@ class APTService {
 
 	u32 screencapPostPermission;
 
-  public:
+public:
 	APTService(Memory& mem, Kernel& kernel) : mem(mem), kernel(kernel), appletManager(mem) {}
 	void reset();
 	void handleSyncRequest(u32 messagePointer);
