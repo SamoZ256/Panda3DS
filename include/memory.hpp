@@ -8,7 +8,6 @@
 
 #include "config.hpp"
 #include "crypto/aes_engine.hpp"
-#include "handles.hpp"
 #include "helpers.hpp"
 #include "loader/ncsd.hpp"
 #include "loader/3dsx.hpp"
@@ -266,7 +265,7 @@ private:
 	// The kernel has a second permission parameter in MapMemoryBlock but not sure what's used for
 	// TODO: Find out
 	// Returns a pointer to the FCRAM block used for the memory if allocation succeeded
-	u8* mapSharedMemory(Handle handle, u32 vaddr, u32 myPerms, u32 otherPerms);
+	u8* mapSharedMemory(u32 handle, u32 vaddr, u32 myPerms, u32 otherPerms);
 
 	// Mirrors the page mapping for "size" bytes starting from sourceAddress, to "size" bytes in destAddress
 	// All of the above must be page-aligned.
