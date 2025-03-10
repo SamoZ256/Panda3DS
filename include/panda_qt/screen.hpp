@@ -3,6 +3,7 @@
 #include <functional>
 #include <memory>
 
+#include "emulator.hpp"
 #include "gl/context.h"
 #include "window_info.h"
 
@@ -13,7 +14,7 @@ class ScreenWidget : public QWidget {
   public:
 	using ResizeCallback = std::function<void(u32, u32)>;
 
-	ScreenWidget(ResizeCallback resizeCallback, QWidget* parent = nullptr);
+	ScreenWidget(Emulator* emu, ResizeCallback resizeCallback, QWidget* parent = nullptr);
 	void resizeEvent(QResizeEvent* event) override;
 	// Called by the emulator thread for resizing the actual GL surface, since the emulator thread owns the GL context
 	void resizeSurface(u32 width, u32 height);
@@ -30,6 +31,8 @@ class ScreenWidget : public QWidget {
 	u32 previousHeight = 0;
 
   private:
+    Emulator* emu;
+
 	std::unique_ptr<GL::Context> glContext = nullptr;
 	ResizeCallback resizeCallback;
 

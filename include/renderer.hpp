@@ -89,7 +89,7 @@ class Renderer {
 
 	// Functions for initializing the graphics context for the Qt frontend, where we don't have the convenience of SDL_Window
 #ifdef PANDA3DS_FRONTEND_QT
-	virtual void initGraphicsContext(GL::Context* context) { Helpers::panic("Tried to initialize incompatible renderer with GL context"); }
+	virtual void initGraphicsContext(ScreenWidget* screen) { Helpers::panic("Tried to initialize incompatible renderer with Qt screen"); }
 #endif
 
 	void setFBSize(u32 width, u32 height) {

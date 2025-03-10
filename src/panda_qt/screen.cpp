@@ -1,4 +1,5 @@
 #include "opengl.hpp"
+#include "renderer.hpp"
 // opengl.hpp must be included at the very top. This comment exists to make clang-format not reorder it :p
 #include <QGuiApplication>
 #include <QScreen>
@@ -14,14 +15,15 @@
 
 #include "panda_qt/screen.hpp"
 
+#include "Foundation/Foundation.hpp"
+
 // OpenGL screen widget, based on https://github.com/stenzek/duckstation/blob/master/src/duckstation-qt/displaywidget.cpp
 // and https://github.com/melonDS-emu/melonDS/blob/master/src/frontend/qt_sdl/main.cpp
 
-#ifdef PANDA3DS_ENABLE_OPENGL
-ScreenWidget::ScreenWidget(ResizeCallback resizeCallback, QWidget* parent) : QWidget(parent), resizeCallback(resizeCallback) {
+ScreenWidget::ScreenWidget(Emulator* emu, ResizeCallback resizeCallback, QWidget* parent) : QWidget(parent), emu(emu), resizeCallback(resizeCallback) {
 	// Create a native window for use with our graphics API of choice
 	resize(800, 240 * 4);
-	
+
 	setAutoFillBackground(false);
 	setAttribute(Qt::WA_NativeWindow, true);
 	setAttribute(Qt::WA_NoSystemBackground, true);
@@ -30,9 +32,17 @@ ScreenWidget::ScreenWidget(ResizeCallback resizeCallback, QWidget* parent) : QWi
 	setFocusPolicy(Qt::StrongFocus);
 	setMouseTracking(true);
 
-	if (!createGLContext()) {
-		Helpers::panic("Failed to create GL context for display");
-	}
+	RendererType rendererType = emu->getConfig().rendererType;
+	if (rendererType == RendererType::OpenGL) {
+    	if (!createGLContext()) {
+    		Helpers::panic("Failed to create GL context for display");
+    	}
+    } else if (rendererType == RendererType::Metal) {
+        setSurfaceType(QWindow::MetalSurface);
+
+        auto id = (NS::Object*)winId();
+        printf("id: %s\n", id->class());
+    }
 }
 
 void ScreenWidget::resizeEvent(QResizeEvent* event) {
